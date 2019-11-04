@@ -1,11 +1,14 @@
-abonents: ['-392983603', '193596632']
+abonents: ['224463529', '299557562', '193596632', '-297826880', '-392983603']
 beta:
-  mint: {date: '2019-10-29', path: /pub/Firmware/beta/MINT, separator: v, version: '190.37'}
-  tdma: {date: '2019-10-29', path: /pub/Firmware/beta/TDMA, separator: v, version: '201.11'}
+  mint: {date: '2019-10-31', path: /pub/Firmware/beta/MINT, separator: v, version: '190.37'}
+  tdma: {date: '2019-10-31', path: /pub/Firmware/beta/TDMA, separator: v, version: '201.11'}
   xg: {date: '2019-06-24', path: /pub/Firmware/beta/XG, separator: v, version: 1.7.15}
 stable:
-  mint: {date: '2019-02-08', path: /pub/Firmware/MINT/H11, separator: v, version: '190.36'}
+  mint: {date: '2019-11-01', path: /pub/Firmware/MINT/H11, separator: v, version: '190.38',
+    changelog: '/pub/Firmware/MINT/readme.en.txt'}
   octopus: {date: '2019-08-29', path: /pub/Firmware/octopus/h18, separator: h18_,
-    version: 1.3.0}
-  tdma: {date: '2019-02-08', path: /pub/Firmware/TDMA/H11, separator: v, version: '201.10'}
-  xg: {date: '2019-09-16', path: /pub/Firmware/XG/H12, separator: v, version: 1.8.0}
+    version: 1.3.0, changelog: '/pub/Firmware/octopus/readme.txt'}
+  tdma: {date: '2019-11-01', path: /pub/Firmware/TDMA/H11, separator: v, version: '201.12',
+    changelog: '/pub/Firmware/TDMA/readme.en.txt'}
+  xg: {date: '2019-09-16', path: /pub/Firmware/XG/H12, separator: v, version: 1.8.0,
+    changelog: '/pub/Firmware/XG/README.txt'}
