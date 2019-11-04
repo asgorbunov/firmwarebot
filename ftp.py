@@ -5,61 +5,79 @@ import requests
 import time
 
 FW_FILE = 'firmware.yaml'
+FW_TREE = ['stable', 'beta']
 FTP_SERVER = 'ftp.infinetwireless.com'
 URL = 'https://api.telegram.org/bot911229343:AAH3m3tdbeKlnzp5OV-JOZwM0ZPVZs_BHTo/'
 CHAT = '193596632'
-TXT = 'Братишка! Для семейста {} вышла новая {}-прошивка с номером {}'
+TXT = 'Братик, вышла новая прошивка!\n  - ветка: {}\n  - семейство: {}\n  - версия: {}\n  - дата: {}'
 SLEEPTIME = 30*60
 
-def send_mess(chat, url, text):
+def send_mess(url, chat, text):
 	req = url + 'sendMessage?chat_id=' + chat + '&text=' + text
 	return requests.post(req)
 
-def ftp_fw_check(fw_path):
-	ftp = FTP(FTP_SERVER)
-	ftp.login()
-	ftp.cwd(fw_path)
+def get_updates(url):
+	req = url + 'getUpdates'
+	return requests.post(req).json()
 
-	ftp_fw_records = []
-	ftp.retrlines('LIST',ftp_fw_records.append)
-	return ftp_fw_records
+def add_abonents(url, fw_struct):
+	updates = get_updates(url)
 
-def fw_version_check(fw_type, family, separator):
-	fw_cur_date = datetime.datetime.strptime(
-		fw_cur[fw_type][family]['date'],
-		'%Y-%m-%d')
+	if updates['result']:
+		abonents = set(fw_struct['abonents'])
 
-	ftp_fw = ftp_fw_check(fw_cur[fw_type][family]['path'])
+		for message in updates['result']:
+			abonents.add(str(message['message']['chat']['id']))
 
-	for fw in ftp_fw:
-		_, _, _, _, _, month, day, year, filename = fw.split()
+		fw_struct['abonents'] = list(abonents)
 
-		if filename[-4:] == '.bin':
+def ftp_fw_list(server_address, fw_struct):
+	with FTP(server_address) as ftp:
+		ftp.login()
+
+		for tree in FW_TREE:
+			for family in fw_struct[tree].keys():
+				ftp.cwd(fw_struct[tree][family]['path'])
+				ftp_dir_list = []
+				ftp.retrlines('LIST', ftp_dir_list.append)
+				fw_check(ftp_dir_list, fw_struct, tree, family)
+
+def fw_check(file_list, fw_struct, tree, family):
+	for file in file_list:
+		if '.bin' in file:
+			_, _, _, _, _, month, day, year, filename = file.split()
+
 			if ':' in year:
 				year = '2019'
 
-			ftp_fw_date = datetime.datetime.strptime(
-				year+'-'+month+'-'+day,
+			file_date = datetime.datetime.strptime(
+				year + '-' + month + '-' + day,
 				'%Y-%b-%d')
+			fw_ideal_date = datetime.datetime.strptime(
+				fw_struct[tree][family]['date'],
+				'%Y-%m-%d')
 
-			if ftp_fw_date.date() > fw_cur_date.date():
+			if file_date.date() > fw_ideal_date.date():
 				print('New!')
-				fw_cur[fw_type][family]['version'] = filename.split(separator)[1].split('.bin')[0]
-				fw_cur[fw_type][family]['date'] = str(ftp_fw_date.date())
 
-				txt = TXT.format(family, fw_type, fw_cur[fw_type][family]['version'])
-				print(send_mess(CHAT, URL, txt))
+				fw_struct[tree][family]['version'] = filename.split(fw_struct[tree][family]['separator'])[1].split('.bin')[0]
+				fw_struct[tree][family]['date'] = str(file_date.date())
 
-i=0
+				notification = TXT.format(tree, family, fw_struct[tree][family]['version'], str(file_date.date()))
 
+				for abonent in fw_struct['abonents']:
+					print(send_mess(URL, abonent, notification))
+
+				break
+
+i = 0
 while 1:
 	with open(FW_FILE) as f:
 		fw_cur = yaml.safe_load(f)
 
-	for fw_type in list(fw_cur.keys()):
-		for family in list(fw_cur[fw_type].keys()):
-			fw_version_check(fw_type, family,
-				fw_cur[fw_type][family]['separator'])
+	add_abonents(URL, fw_cur)
+
+	ftp_fw_list(FTP_SERVER, fw_cur)
 
 	with open(FW_FILE, 'w') as f:
 		yaml.dump(fw_cur, f)
@@ -67,3 +85,9 @@ while 1:
 	print(i)
 	i+=1
 	time.sleep(SLEEPTIME)
+
+#TXT = 'Братишка, вышла новая прошивка!\n  - ветка: {}\n  - семейство: {}\n  - версия: {}\n  - дата: {}'
+
+#txt = TXT.format()
+
+#print(send_mess(URL, '-392983603', TXT))
